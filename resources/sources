@@ -1,0 +1,14 @@
+#!include ..\sources.inc
+
+TARGETNAME=Common
+TARGETTYPE=NOTARGET
+TEST_CODE=1
+
+#WARNING_LEVEL=W3
+#MSC_WARNING_LEVEL=$(MSC_WARNING_LEVEL:W4=W3)
+
+SOURCES=\
+    MainWindow.rc \
+
+INCLUDES=\
+    $(INCLUDES); \
