@@ -136,7 +136,7 @@
   <ItemGroup>
     <ClCompile Include="common\Common.cpp" />
     <ClCompile Include="common\FileHelpers.cpp" />
-    <ClCompile Include="common\Parser.cpp" />
+    <ClCompile Include="common\TextTreeParser.cpp" />
     <ClCompile Include="common\Unicode.cpp" />
     <ClCompile Include="common\WindowUtility.cpp" />
     <ClCompile Include="FontSetViewer.cpp" />
@@ -145,28 +145,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\AutoResource.h" />
-    <ClInclude Include="common\ByteOrder.h" />
-    <ClInclude Include="common\CheckedPtr.h" />
     <ClInclude Include="common\Common.h" />
-    <ClInclude Include="common\Exceptions.h" />
     <ClInclude Include="common\FileHelpers.h" />
     <ClInclude Include="common\Macros.h" />
-    <ClInclude Include="common\Parser.h" />
+    <ClInclude Include="common\TextTreeParser.h" />
     <ClInclude Include="common\Pointers.h" />
     <ClInclude Include="common\precomp.h" />
     <ClInclude Include="common\Unicode.h" />
     <ClInclude Include="common\WindowUtility.h" />
     <ClInclude Include="FontSetViewer.h" />
     <ClInclude Include="font\DWritEx.h" />
-    <ClInclude Include="font\OpenTypeDefs.h" />
-    <ClInclude Include="font\OpenTypeFaceData.h" />
     <ClInclude Include="font\precomp.h" />
     <ClInclude Include="precomp.h" />
     <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="precomp.inc" />
-    <None Include="sources.inc" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resources\FontSetViewer.rc" />

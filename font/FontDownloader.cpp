@@ -4,6 +4,7 @@
 
 using InternetHandle = AutoResource<HINTERNET, HandleResourceTypePolicy<HINTERNET, BOOL(WINAPI*)(HINTERNET), &WinHttpCloseHandle> >;
 
+
 class InternetDownloader
 {
 protected:
@@ -1091,3 +1092,160 @@ public:
 };
 
 RemoteFontDownloadManager RemoteFontDownloadManager::singleton_;
+
+
+#if 0
+auto fontFileLoader = RemoteStreamFontFileLoader::GetInstance();
+IFR(dwriteFactory3p->RegisterFontFileLoader(fontFileLoader));
+fontFileLoader->SetDownloadManager(RemoteFontDownloadManager::GetInstance());
+
+const wchar_t* urlList[] = {
+    L"http://dwayner-test/fonts/GoogleFontDirectory/alice/Alice-Regular.ttf",
+    L"http://dwayner-test/fonts/AdobeOpenType_fonts/ACaslonPro-Bold.otf",
+    L"http://dwayner-test/fonts/www.dafont.com/15x5.ttf",
+    L"http://dwayner-test/fonts/www.dafont.com/HVD_Peace.ttf",
+    L"http://dwayner-test/Fonts/AdobeOpenType_fonts/KozGoPr6N-Bold.otf",
+    L"http://dwayner-test/Fonts/www.dafont.com/catcrypt.ttf",
+};
+DWRITE_FONT_PROPERTY properties[][2] = {
+    { { DWRITE_FONT_PROPERTY_ID_FULL_NAME, L"Alice", L"en-us" },{ DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME, L"Alice", L"en-us" }, },
+    { { DWRITE_FONT_PROPERTY_ID_FULL_NAME, L"Adobe Carlson Pro", L"en-us" },{ DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME, L"Adobe Carlson Pro", L"en-us" }, },
+    { { DWRITE_FONT_PROPERTY_ID_FULL_NAME, L"15x5", L"en-us" },{ DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME, L"15x5", L"en-us" }, },
+    { { DWRITE_FONT_PROPERTY_ID_FULL_NAME, L"HVD Peace", L"en-us" },{ DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME, L"HVD Peace", L"en-us" }, },
+    { { DWRITE_FONT_PROPERTY_ID_FULL_NAME, L"Kozuka Gothic Pro", L"en-us" },{ DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME, L"Kozuka Gothic Pro", L"en-us" }, },
+    { { DWRITE_FONT_PROPERTY_ID_FULL_NAME, L"Cat Crypt", L"en-us" },{ DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME, L"Cat Crypt", L"en-us" }, },
+};
+static_assert(ARRAYSIZE(urlList) == ARRAYSIZE(properties), "Array sizes must match");
+
+auto fontFileLoader = RemoteStreamFontFileLoader::GetInstance();
+dwriteFactory3p->RegisterFontFileLoader(fontFileLoader);
+fontFileLoader->SetDownloadManager(RemoteFontDownloadManager::GetInstance());
+
+for (uint32_t i = 0; i < ARRAYSIZE(urlList); ++i)
+{
+    ComPtr<IDWriteFontFile> fontFile;
+    ComPtr<IDWriteFontFaceReference> fontFaceReference;
+
+    wchar_t const* fontFileReferenceKey = urlList[i];
+    uint32_t fontFileReferenceKeySize = (wcslen(fontFileReferenceKey) + 1) * sizeof(wchar_t);
+    IFR(dwriteFactory3p->CreateCustomFontFileReference(
+        fontFileReferenceKey,
+        fontFileReferenceKeySize,
+        fontFileLoader,
+        OUT &fontFile
+    ));
+
+    IFR(dwriteFactory3p->CreateFontFaceReference(
+        fontFile,
+        0, // faceIndex
+        DWRITE_FONT_SIMULATIONS_NONE,
+        OUT &fontFaceReference
+    ));
+
+    fontSetBuilder->AddFontFaceReference(
+        fontFaceReference,
+        &properties[i][0],
+        2 // propertiesCount
+    );
+}
+
+////////////////////////////////////////
+// Download the font set from the server.
+
+std::vector<uint8_t> rawJsonFile;
+InternetDownloader internetDownloader;
+IFR(internetDownloader.DownloadFile(g_fontSetUrl, OUT rawJsonFile));
+internetDownloader.clear();
+
+// Read all commands into a text tree.
+std::wstring fontSetText;
+ConvertText(rawJsonFile, OUT fontSetText);
+TextTree nodes;
+uint32_t textLength = static_cast<uint32_t>(fontSetText.size());
+JsonexParser parser(fontSetText.data(), textLength, TextTreeParser::OptionsNoEscapeSequence);
+parser.ReadNodes(IN OUT nodes);
+
+uint32_t nodeIndex = 0;
+if (!nodes.AdvanceChildNode(IN OUT nodeIndex) // skip the root node.
+    || nodes.GetNode(nodeIndex).type != TextTree::Node::TypeArray
+    || !nodes.AdvanceChildNode(IN OUT nodeIndex))
+{
+    return S_FALSE;
+}
+
+std::wstring filePath;
+std::wstring familyName;
+std::wstring fullName;
+std::wstring weight;
+std::wstring stretch;
+std::wstring slope;
+std::wstring value;
+uint32_t faceIndex = 0;
+
+DWRITE_FONT_PROPERTY properties[5] = {
+    { DWRITE_FONT_PROPERTY_ID_FULL_NAME, L"FullName", L"en-us" },
+    { DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME, L"WssFamilyName", L"en-us" },
+    { DWRITE_FONT_PROPERTY_ID_WEIGHT, L"Weight", L"" },
+    { DWRITE_FONT_PROPERTY_ID_STRETCH, L"Stretch", L"" },
+    { DWRITE_FONT_PROPERTY_ID_STYLE, L"Slope", L"" },
+};
+
+while (nodeIndex < nodes.GetNodeCount())
+{
+    if (nodes.GetNode(nodeIndex).type == TextTree::Node::TypeObject)
+    {
+        uint32_t subnodeIndex;
+        nodes.GetKeyValue(nodeIndex, L"Path", OUT filePath);
+
+        if (nodes.FindKey(nodeIndex, L"FullName", OUT subnodeIndex))
+        {
+            nodes.GetKeyValue(subnodeIndex, L"en-us", OUT fullName);
+        }
+        if (nodes.FindKey(nodeIndex, L"WssFamilyName", OUT subnodeIndex))
+        {
+            nodes.GetKeyValue(subnodeIndex, L"en-us", OUT familyName);
+        }
+        if (nodes.GetKeyValue(nodeIndex, L"FaceIndex", OUT value))
+        {
+            faceIndex = _wtoi(value.c_str());
+        }
+        nodes.GetKeyValue(nodeIndex, L"Weight", OUT weight);
+        nodes.GetKeyValue(nodeIndex, L"Stretch", OUT stretch);
+        nodes.GetKeyValue(nodeIndex, L"Slope", OUT slope);
+
+        ComPtr<IDWriteFontFile> fontFile;
+        ComPtr<IDWriteFontFaceReference> fontFaceReference;
+
+        wchar_t const* fontFileReferenceKey = filePath.data();
+        uint32_t fontFileReferenceKeySize = (static_cast<uint32_t>(filePath.size()) + 1) * sizeof(wchar_t);
+        IFR(dwriteFactory3p->CreateCustomFontFileReference(
+            fontFileReferenceKey,
+            fontFileReferenceKeySize,
+            fontFileLoader,
+            OUT &fontFile
+        ));
+
+        IFR(dwriteFactory3p->CreateFontFaceReference(
+            fontFile,
+            faceIndex,
+            DWRITE_FONT_SIMULATIONS_NONE,
+            OUT &fontFaceReference
+        ));
+
+        static_assert(ARRAYSIZE(properties) == 5, "Update this code to match the size");
+        properties[0].propertyValue = fullName.c_str();
+        properties[1].propertyValue = familyName.c_str();
+        properties[2].propertyValue = weight.c_str();
+        properties[3].propertyValue = stretch.c_str();
+        properties[4].propertyValue = slope.c_str();
+        fontSetBuilder->AddFontFaceReference(
+            fontFaceReference,
+            &properties[0],
+            ARRAYSIZE(properties) // propertiesCount
+        );
+    }
+
+    if (!nodes.AdvanceNextNode(IN OUT nodeIndex))
+        break;
+}
+#endif

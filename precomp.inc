@@ -139,7 +139,7 @@
 #include "common/Pointers.h"
 #include "common/Unicode.h"
 #include "common/FileHelpers.h"
-#include "Common/Parser.h"
+#include "Common/TextTreeParser.h"
 #include "Common/WindowUtility.h"
 
 //////////////////////////////
