@@ -69,24 +69,24 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</OutDir>
-    <IntDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</IntDir>
+    <OutDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</OutDir>
-    <IntDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</IntDir>
+    <OutDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</OutDir>
-    <IntDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</IntDir>
+    <OutDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</OutDir>
-    <IntDir>$(SolutionDir)\.$(SolutionName)_$(Configuration)_$(PlatformTarget)\</IntDir>
+    <OutDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

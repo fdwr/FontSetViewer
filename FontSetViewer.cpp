@@ -29,20 +29,45 @@ HRESULT CopyImageToClipboard(HWND hwnd, HDC hdc, bool isUpsideDown);
 namespace
 {
     std::wstring g_dwriteDllName = L"dwrite.dll"; // Point elsewhere to load a custom one.
+    bool g_startBlankList = true;
 
     const static wchar_t* g_locales[][2] = {
-        {L"English US", L"en-US"},
-        {L"English UK", L"en-GB"},
-        {L"الْعَرَبيّة Arabic Egypt", L"ar-EG"},
-        {L"الْعَرَبيّة Arabic Iraq", L"ar-IQ"},
-        {L"中文 Chinese PRC", L"zh-CN"},
-        {L"中文 Chinese Taiwan", L"zh-TW"},
-        {L"한글 Hangul Korea", L"ko-KR"},
-        {L"עִבְרִית Hebrew Israel", L"he-IL"},
-        {L"हिन्दी Hindi India", L"hi-IN"},
-        {L"日本語 Japanese", L"ja-JP"},
-        {L"Romania" , L"ro-RO"},
-        {L"Русский язык Russian", L"ru-RU"},
+        { L"English US", L"en-US"},
+        { L"English UK", L"en-GB"},
+        { L"الْعَرَبيّة Arabic Egypt", L"ar-EG"},
+        { L"الْعَرَبيّة Arabic Iraq", L"ar-IQ"},
+        { L"中文 Chinese PRC", L"zh-CN"},
+        { L"中文 Chinese Taiwan", L"zh-TW"},
+        { L"한글 Hangul Korea", L"ko-KR"},
+        { L"עִבְרִית Hebrew Israel", L"he-IL"},
+        { L"हिन्दी Hindi India", L"hi-IN"},
+        { L"日本語 Japanese", L"ja-JP"},
+        { L"Romania" , L"ro-RO"},
+        { L"Русский язык Russian", L"ru-RU"},
+        { L"ca-ES",        L"ca-ES"},
+        { L"cs-CZ",        L"cs-CZ"},
+        { L"da-DK",        L"da-DK"},
+        { L"de-DE",        L"de-DE"},
+        { L"el-GR",        L"el-GR"},
+        { L"es-ES",        L"es-ES"},
+        { L"es-ES_tradnl", L"es-ES_tradnl"},
+        { L"es-MX",        L"es-MX"},
+        { L"eu-ES",        L"eu-ES"},
+        { L"fi-FI",        L"fi-FI"},
+        { L"fr-CA",        L"fr-CA"},
+        { L"fr-FR",        L"fr-FR"},
+        { L"hu-HU",        L"hu-HU"},
+        { L"it-IT",        L"it-IT"},
+        { L"nb-NO",        L"nb-NO"},
+        { L"nl-NL",        L"nl-NL"},
+        { L"pl-PL",        L"pl-PL"},
+        { L"pt-BR",        L"pt-BR"},
+        { L"pt-PT",        L"pt-PT"},
+        { L"ru-RU",        L"ru-RU"},
+        { L"sk-SK",        L"sk-SK"},
+        { L"sl-SI",        L"sl-SI"},
+        { L"sv-SE",        L"sv-SE"},
+        { L"tr-TR",        L"tr-TR"},
         };
 
     const static wchar_t* g_fontCollectionFilterModeNames[] = {
@@ -765,7 +790,6 @@ namespace
     }
 
 
-
     HRESULT GetLocalizedString(
         _In_ IDWriteStringList* stringList,
         uint32_t stringIndex,
@@ -903,18 +927,10 @@ HRESULT MainWindow::Initialize()
         IFR(hr);
     }
 
-    IFR(dwriteFactory_->CreateTextFormat(
-        L"Segoe UI",
-        fontCollection_,
-        DWRITE_FONT_WEIGHT_NORMAL,
-        DWRITE_FONT_STYLE_NORMAL,
-        DWRITE_FONT_STRETCH_NORMAL,
-        20.0f,
-        L"",
-        OUT &textFormat_
-        ));
-    textFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-    textFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    if (g_startBlankList)
+    {
+        InitializeBlankFontCollection();
+    }
 
     OnMove();
     OnSize(); // update size and reflow
@@ -1319,11 +1335,12 @@ DialogProcResult CALLBACK MainWindow::OnNotification(HWND hwnd, WPARAM wParam, L
 
         case NM_DBLCLK:
         case NM_RETURN:
+            // Activate if Enter pressed.
             OnCommand(hwnd, IdcActivateFont, (LPARAM)nmh.hwndFrom);
             break;
 
         case LVN_KEYDOWN:
-            // Activate if Return or Space pressed.
+            // Pop one filter if backspace is pressed.
             if (((NMLVKEYDOWN*)lParam)->wVKey == VK_BACK)
             {
                 PopFilter(static_cast<uint32_t>(fontCollectionFilters_.size() - 1));
@@ -1456,6 +1473,7 @@ DialogProcResult CALLBACK MainWindow::OnDragAndDrop(HWND hwnd, UINT message, WPA
         }
     }
 
+    PopFilter(0); // Confusing to leave filters which likely don't apply to the new fonts. So clear them.
     IFR(RebuildFontCollectionListFromFileNames(/*baseFilePath*/ nullptr, fileNames));
     UpdateFontCollectionListUI();
 
@@ -1556,12 +1574,26 @@ HRESULT MainWindow::DrawFontCollectionIconPreview(const NMLVCUSTOMDRAW* customDr
         }
     }
 
-    // Create the text layou to draw.
+    ComPtr<IDWriteTextFormat> textFormat;
+    IFR(dwriteFactory_->CreateTextFormat(
+        L"Segoe UI",
+        fontCollection_,
+        DWRITE_FONT_WEIGHT_NORMAL,
+        DWRITE_FONT_STYLE_NORMAL,
+        DWRITE_FONT_STRETCH_NORMAL,
+        20.0f,
+        L"",
+        OUT &textFormat
+    ));
+    textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+    textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
+    // Create the text layout to draw.
     ComPtr<IDWriteTextLayout> textLayout;
     IFR(dwriteFactory_->CreateTextLayout(
         text.c_str(),
         static_cast<uint32_t>(text.size()),
-        textFormat_,
+        textFormat,
         float(layoutWidth),
         float(layoutHeight),
         OUT &textLayout
@@ -1972,6 +2004,7 @@ STDMETHODIMP MainWindow::OpenFontFiles()
         fileNames[ofn.nFileOffset - 1] = '\0';
     }
 
+    PopFilter(0); // Confusing to leave filters which likely don't apply to the new fonts. So clear them.
     IFR(RebuildFontCollectionListFromFileNames(
         fileNames.data(),
         { &fileNames[ofn.nFileOffset], fileNames.size() - ofn.nFileOffset }
@@ -2285,6 +2318,37 @@ void MainWindow::ResetFontList()
 {
     fontSet_.clear();
     fontCollection_.clear();
+}
+
+
+HRESULT MainWindow::InitializeBlankFontCollection()
+{
+    ResetFontList();
+
+    ComPtr<IDWriteFactory3> dwriteFactory3;
+    dwriteFactory_->QueryInterface(OUT &dwriteFactory3);
+
+    if (dwriteFactory3 != nullptr)
+    {
+        ComPtr<IDWriteFontSet> newFontSet;
+        ComPtr<IDWriteFontSetBuilder> fontSetBuilder;
+        IFR(dwriteFactory3->CreateFontSetBuilder(OUT &fontSetBuilder));
+        IFR(fontSetBuilder->CreateFontSet(OUT &fontSet_));
+        IFR(dwriteFactory3->CreateFontCollectionFromFontSet(fontSet_, OUT reinterpret_cast<IDWriteFontCollection1**>(&fontCollection_)));
+    }
+    else
+    {
+        IFR(dwriteFactory_->GetSystemFontCollection(OUT &fontCollection_));
+
+        IFR(CreateFontCollection(
+            dwriteFactory3,
+            L"",
+            0,
+            OUT &fontCollection_
+            ));
+    }
+
+    return S_OK;
 }
 
 
@@ -2918,13 +2982,15 @@ HRESULT MainWindow::InitializeLanguageMenu()
     HMENU languageMenu = GetSubMenu(mainMenu, MenuIdLanguage, /*byPosition*/false);
     RemoveMenu(languageMenu, 0, MF_BYPOSITION); // Remove the placeholder entry.
 
+    std::wstring text;
     for (uint32_t i = 0; i < ARRAYSIZE(g_locales); ++i)
     {
+        GetFormattedString(IN OUT text, L"%s (%s)", g_locales[i][0], g_locales[i][1]);
         AppendMenu(
             languageMenu,
             MF_STRING,
             MenuIdLanguageFirst + i,
-            g_locales[i][0]
+            text.c_str()
             );
     }
 
@@ -3004,6 +3070,12 @@ HRESULT MainWindow::ParseCommandLine(_In_z_ const wchar_t* commandLine)
     if (!commands.GetKeyValue(0, L"DWriteDLL", OUT g_dwriteDllName))
     {
         g_dwriteDllName = L"DWrite.dll";
+    }
+
+    std::wstring value;
+    if (commands.GetKeyValue(0, L"StartBlank", OUT value))
+    {
+        g_startBlankList = (value == L"true");
     }
 
     return S_OK;

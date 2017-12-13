@@ -133,6 +133,7 @@ protected:
     STDMETHODIMP RebuildFontCollectionList();
     STDMETHODIMP DrawFontCollectionIconPreview(const NMLVCUSTOMDRAW* customDraw);
     STDMETHODIMP RebuildFontCollectionListFromFileNames(_In_opt_z_ wchar_t const* baseFilePath, array_ref<wchar_t const> fileNames);
+    STDMETHODIMP InitializeBlankFontCollection();
     void ResetFontList();
 
     STDMETHODIMP GetFontProperty(
@@ -194,7 +195,6 @@ protected:
     ComPtr<IDWriteFactory>              dwriteFactory_;
     ComPtr<IDWriteRenderingParams>      renderingParams_;
     ComPtr<IDWriteBitmapRenderTarget>   renderTarget_;
-    ComPtr<IDWriteTextFormat>           textFormat_;
     ComPtr<IDWriteFontSet>              fontSet_;
     ComPtr<IDWriteFontCollection>       fontCollection_;
     IDWriteFontCollection*              previousFontCollection_ = nullptr; // weak pointer - no strong ref
