@@ -78,20 +78,20 @@ HRESULT GetLocalizedString(
     OUT std::wstring& value
     ) throw();
 
-HRESULT GetFaceNames(
+HRESULT GetFontFaceNameWws(
     IDWriteFont* font,
     _In_z_ wchar_t const* languageName,
     OUT std::wstring& value
     );
 
 // Returns the family name of thte font (in the language requested, if available, else the default English name).
-HRESULT GetFontFamilyName(
+HRESULT GetFontFamilyNameWws(
     IDWriteFont* font,
     _In_z_ wchar_t const* languageName,
     OUT std::wstring& value
     ) throw();
 
-HRESULT GetFontFamilyName(
+HRESULT GetFontFamilyNameWws(
     IDWriteFontFamily* fontFamily,
     _In_z_ wchar_t const* languageName,
     OUT std::wstring& value

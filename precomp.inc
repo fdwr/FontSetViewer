@@ -120,16 +120,9 @@
 //////////////////////////////
 // DirectX headers
 
-#if 1 // Newer version if SDK is older.
-#include "sdk_headers/DCommon.h"
-#include "sdk_headers/DWrite_3.h"
-#else
 #include <DWrite_3.h>
-#endif
-
 #include <D2d1.h>
 #include <D2d1Helper.h>
-//#include <WinCodec.h>
 
 //////////////////////////////
 // Common headers

@@ -8,26 +8,6 @@
 #include "precomp.h"
 
 
-#if 0
-bool TestBit(void const* memoryBase, uint32_t bitIndex) throw()
-{
-    return _bittest( reinterpret_cast<long const*>(memoryBase), bitIndex) != 0;
-}
-
-
-bool ClearBit(void* memoryBase, uint32_t bitIndex) throw()
-{
-    return _bittestandreset( reinterpret_cast<long*>(memoryBase), bitIndex) != 0;
-}
-
-
-bool SetBit(void* memoryBase, uint32_t bitIndex) throw()
-{
-    return _bittestandset( reinterpret_cast<long*>(memoryBase), bitIndex) != 0;
-}
-#endif
-
-
 // Internal version. Should call the other two overloads publicly.
 void GetFormattedString(IN OUT std::wstring& returnString, bool shouldConcatenate, const wchar_t* formatString, va_list vargs) 
 {

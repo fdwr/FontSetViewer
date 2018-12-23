@@ -92,7 +92,7 @@ public:
         uint32_t fontFileNamesSize
         ) throw()
     {  
-        if (factory == nullptr || fontFileNames == nullptr || !fontFileNames[0])
+        if (factory == nullptr || fontFileNames == nullptr)
             return E_INVALIDARG;
 
         factory_ = factory;
@@ -610,7 +610,7 @@ HRESULT GetLocalizedString(
 }
 
 
-HRESULT GetFaceNames(
+HRESULT GetFontFaceNameWws(
     IDWriteFont* font,
     _In_z_ wchar_t const* languageName,
     OUT std::wstring& value
@@ -628,7 +628,7 @@ HRESULT GetFaceNames(
 }
 
 
-HRESULT GetFontFamilyName(
+HRESULT GetFontFamilyNameWws(
     IDWriteFont* font,
     _In_z_ wchar_t const* languageName,
     OUT std::wstring& value
@@ -648,7 +648,7 @@ HRESULT GetFontFamilyName(
 }
 
 
-HRESULT GetFontFamilyName(
+HRESULT GetFontFamilyNameWws(
     IDWriteFontFamily* fontFamily,
     _In_z_ wchar_t const* languageName,
     OUT std::wstring& value

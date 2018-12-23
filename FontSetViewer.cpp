@@ -29,7 +29,7 @@ HRESULT CopyImageToClipboard(HWND hwnd, HDC hdc, bool isUpsideDown);
 namespace
 {
     std::wstring g_dwriteDllName = L"dwrite.dll"; // Point elsewhere to load a custom one.
-    bool g_startBlankList = true;
+    bool g_startBlankList = false;
 
     const static wchar_t* g_locales[][2] = {
         { L"English US", L"en-US"},
@@ -814,13 +814,12 @@ namespace
 
 
 int APIENTRY wWinMain(
-    HINSTANCE   hInstance, 
+    HINSTANCE   hInstance,
     HINSTANCE   hPrevInstance,
     LPWSTR      commandLine,
     int         nCmdShow
     )
 {
-
     // The Microsoft Security Development Lifecycle recommends that all
     // applications include the following call to ensure that heap corruptions
     // do not go unnoticed and therefore do not introduce opportunities
@@ -934,6 +933,14 @@ HRESULT MainWindow::Initialize()
 
     OnMove();
     OnSize(); // update size and reflow
+
+    // Check if it's an older version of DirectWrite, like Windows 7, displaying warning in log.
+    ComPtr<IDWriteFactory3> factory3;
+    dwriteFactory_->QueryInterface(OUT &factory3);
+    if (factory3 == nullptr)
+    {
+        AppendLog(AppendLogModeImmediate, L"Windows version is older than Windows 10. Application will have very limited functionality.\r\n");
+    }
 
     InitializeLanguageMenu();
     InitializeFontCollectionFilterUI();
@@ -2338,10 +2345,8 @@ HRESULT MainWindow::InitializeBlankFontCollection()
     }
     else
     {
-        IFR(dwriteFactory_->GetSystemFontCollection(OUT &fontCollection_));
-
         IFR(CreateFontCollection(
-            dwriteFactory3,
+            dwriteFactory_,
             L"",
             0,
             OUT &fontCollection_
@@ -2382,7 +2387,9 @@ HRESULT MainWindow::RebuildFontCollectionList()
             ComPtr<IDWriteFontCollection1> fontCollection1;
             fontCollection_->QueryInterface(OUT &fontCollection1);
             if (fontCollection1 != nullptr)
+            {
                 fontCollection1->GetFontSet(OUT &fontSet_);
+            }
         }
     }
 
@@ -2539,26 +2546,20 @@ HRESULT MainWindow::RebuildFontCollectionList()
 
         std::vector<ComPtr<IDWriteFont> > fontCollectionFonts;
 
-        if (fontCollection_ != previousFontCollection_)
+        for (uint32_t i = 0, ci = fontCollection_->GetFontFamilyCount(); i < ci; ++i)
         {
-            previousFontCollection_ = fontCollection_;
-            fontCollectionFonts.clear();
+            ComPtr<IDWriteFontFamily> fontFamily;
+            fontCollection_->GetFontFamily(i, OUT &fontFamily);
 
-            for (uint32_t i = 0, ci = fontCollection_->GetFontFamilyCount(); i < ci; ++i)
+            if (fontFamily == nullptr) continue;
+            for (uint32_t j = 0, cj = fontFamily->GetFontCount(); j < cj; ++j)
             {
-                ComPtr<IDWriteFontFamily> fontFamily;
-                fontCollection_->GetFontFamily(i, OUT &fontFamily);
+                ComPtr<IDWriteFont> font;
+                fontFamily->GetFont(j, OUT &font);
+                if (font == nullptr || font->GetSimulations() != DWRITE_FONT_SIMULATIONS_NONE)
+                    continue;
 
-                if (fontFamily == nullptr) continue;
-                for (uint32_t j = 0, cj = fontFamily->GetFontCount(); j < cj; ++j)
-                {
-                    ComPtr<IDWriteFont> font;
-                    fontFamily->GetFont(j, OUT &font);
-                    if (font == nullptr || font->GetSimulations() != DWRITE_FONT_SIMULATIONS_NONE)
-                        continue;
-
-                    fontCollectionFonts.push_back(font);
-                }
+                fontCollectionFonts.push_back(font);
             }
         }
 
@@ -2656,7 +2657,7 @@ HRESULT MainWindow::GetFontProperty(
         break;
 
     case FontCollectionFilterMode::WssFamilyName:
-        GetFontFamilyName(font, languageName, OUT fontPropertyValue);
+        GetFontFamilyNameWws(font, languageName, OUT fontPropertyValue);
         return S_OK;
 
     case FontCollectionFilterMode::TypographicFamilyName:
@@ -2664,7 +2665,7 @@ HRESULT MainWindow::GetFontProperty(
         break;
 
     case FontCollectionFilterMode::WssFaceName:
-        GetFaceNames(font, languageName, OUT fontPropertyValue);
+        GetFontFaceNameWws(font, languageName, OUT fontPropertyValue);
         return S_OK;
 
     case FontCollectionFilterMode::TypographicFaceName:
@@ -2692,7 +2693,7 @@ HRESULT MainWindow::GetFontProperty(
             wchar_t const* tags = nullptr;
             wchar_t const* scripts = nullptr;
             std::wstring familyName;
-            GetFontFamilyName(font, languageName, OUT familyName);
+            GetFontFamilyNameWws(font, languageName, OUT familyName);
             FindTagsFromKnownFontName(
                 nullptr, // fullFontName
                 familyName.c_str(),
@@ -2806,7 +2807,18 @@ HRESULT MainWindow::GetFontProperty(
     // The preferred name is often empty, so use the normal family name in that case.
     if (fontPropertyValue.empty() && stringId == DWRITE_INFORMATIONAL_STRING_PREFERRED_FAMILY_NAMES)
     {
-        GetFontFamilyName(font, languageName, OUT fontPropertyValue);
+        GetFontFamilyNameWws(font, languageName, OUT fontPropertyValue);
+    }
+
+    // The full font name really shouldn't be empty, but if it is, concatenate the family and face name.
+    if (fontPropertyValue.empty() && stringId == DWRITE_INFORMATIONAL_STRING_FULL_NAME)
+    {
+        std::wstring familyName, faceName;
+        GetFontFamilyNameWws(font, languageName, OUT familyName);
+        GetFontFaceNameWws(font, languageName, OUT faceName);
+        familyName += L" ";
+        familyName += faceName;
+        fontPropertyValue = std::move(familyName);
     }
 
     return S_OK;
@@ -2858,7 +2870,7 @@ HRESULT MainWindow::AddFontToFontCollectionList(
     fontCollectionListStringMap_.insert(std::pair<std::wstring, uint32_t>(name, static_cast<uint32_t>(fontCollectionList_.size())));
 
     std::wstring fontFamilyName;
-    GetFontFamilyName(font, languageName, OUT fontFamilyName);
+    GetFontFamilyNameWws(font, languageName, OUT fontFamilyName);
 
     FontCollectionEntry entry = {
         name,
@@ -2907,7 +2919,7 @@ HRESULT MainWindow::PushFilter(
 
     const FontCollectionEntry& entry = fontCollectionList_[selectedFontIndex];
 
-#if 0
+#if 0 // Debug to show all properties to log window.
     if (filterMode_ == FontCollectionFilterMode::None)
     {
         std::wstring fontPropertyValue;

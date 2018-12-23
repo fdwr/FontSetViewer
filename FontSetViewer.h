@@ -197,7 +197,6 @@ protected:
     ComPtr<IDWriteBitmapRenderTarget>   renderTarget_;
     ComPtr<IDWriteFontSet>              fontSet_;
     ComPtr<IDWriteFontCollection>       fontCollection_;
-    IDWriteFontCollection*              previousFontCollection_ = nullptr; // weak pointer - no strong ref
 
     uint32_t fontColor_ = 0xFF000000;
     uint32_t backgroundColor_ = 0xFFFFFFFF;
