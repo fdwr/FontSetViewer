@@ -1,4 +1,4 @@
-# FontSetViewer
+# DWrite FontSetViewer
 Simple utility to display items in an IDWriteFontSet.
 
 - Preview item in font
