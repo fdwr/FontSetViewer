@@ -125,6 +125,7 @@ protected:
     STDMETHODIMP CopyToClipboard(bool copyPlainText = false);
     STDMETHODIMP CopyImageToClipboard();
     STDMETHODIMP PasteFromClipboard();
+    STDMETHODIMP InitializeDisplayTextEdit();
     STDMETHODIMP InitializeLanguageMenu();
     STDMETHODIMP InitializeFontCollectionListUI();
     STDMETHODIMP InitializeFontCollectionFilterUI();

@@ -942,6 +942,7 @@ HRESULT MainWindow::Initialize()
         AppendLog(AppendLogModeImmediate, L"Windows version is older than Windows 10. Application will have very limited functionality.\r\n");
     }
 
+    InitializeDisplayTextEdit();
     InitializeLanguageMenu();
     InitializeFontCollectionFilterUI();
     InitializeFontCollectionListUI();
@@ -1170,6 +1171,13 @@ DialogProcResult CALLBACK MainWindow::OnCommand(HWND hwnd, WPARAM wParam, LPARAM
         AppendLog(AppendLogModeImmediate, L"Language set to %s\r\n", g_locales[currentLanguageIndex_][0]);
         RebuildFontCollectionList();
         UpdateFontCollectionListUI();
+        break;
+
+    case IdcText:
+        if (wmEvent == EN_CHANGE)
+        {
+            InvalidateRect(GetDlgItem(hwnd_, IdcFontCollectionList), nullptr, true);
+        }
         break;
 
     case IdcActivateFontCollectionFilter:
@@ -1522,14 +1530,20 @@ HRESULT MainWindow::DrawFontCollectionIconPreview(const NMLVCUSTOMDRAW* customDr
         return S_FALSE;
 
     // Get the item text and icon index.
+    // Check if the text control has any text in it, else just use the listview item text.
     wchar_t textBuffer[256]; textBuffer[0] = '\0';
-    LVITEM listViewItem;
-    ZeroMemory(OUT &listViewItem, sizeof(listViewItem));
-    listViewItem.mask  = LVIF_TEXT | LVIF_IMAGE;
-    listViewItem.pszText = textBuffer;
-    listViewItem.cchTextMax = ARRAYSIZE(textBuffer);
-    listViewItem.iItem = itemIndex;
-    ListView_GetItem(customDraw->nmcd.hdr.hwndFrom, OUT &listViewItem);
+    HWND hwndText = GetDlgItem(hwnd_, IdcText);
+    Edit_GetText(hwndText, textBuffer, std::size(textBuffer));
+
+    LVITEM listViewItem = {};
+    if (textBuffer[0] == '\0')
+    {
+        listViewItem.mask  = LVIF_TEXT | LVIF_IMAGE;
+        listViewItem.pszText = textBuffer;
+        listViewItem.cchTextMax = ARRAYSIZE(textBuffer);
+        listViewItem.iItem = itemIndex;
+        ListView_GetItem(customDraw->nmcd.hdr.hwndFrom, OUT &listViewItem);
+    }
 
     // Transfer bitmap into temporary bitmap.
     BitBlt(renderTarget_->GetMemoryDC(), 0,0, rect.right - rect.left, rect.bottom - rect.top, customDraw->nmcd.hdc, rect.left, rect.top, SRCCOPY|NOMIRRORBITMAP);
@@ -1763,13 +1777,13 @@ void MainWindow::OnSize()
     RECT paddedClientRect = clientRect;
     InflateRect(IN OUT &paddedClientRect, -spacing, -spacing);
 
-    const size_t filterIndex = 0;
-    const size_t logIndex = 2;
+    const size_t filterIndex = 1;
+    const size_t logIndex = 3;
     const long mainWindowThirdWidth = paddedClientRect.right / 3;
     const long mainWindowQuarterHeight = paddedClientRect.bottom / 4;
     WindowPosition windowPositions[] = {
-        //WindowPosition(GetDlgItem(hwnd, IdcTags), PositionOptionsFillHeight | PositionOptionsAlignTop),
-        WindowPosition(GetDlgItem(hwnd, IdcFontCollectionFilter), PositionOptionsFillHeight),
+        WindowPosition(GetDlgItem(hwnd, IdcText), PositionOptionsFillWidth | PositionOptionsAlignTop),
+        WindowPosition(GetDlgItem(hwnd, IdcFontCollectionFilter), PositionOptionsFillHeight | PositionOptionsNewLine),
         WindowPosition(GetDlgItem(hwnd, IdcFontCollectionList), PositionOptionsFillWidth | PositionOptionsFillHeight),
         WindowPosition(GetDlgItem(hwnd, IdcLog), PositionOptionsFillWidth | PositionOptionsAlignTop | PositionOptionsNewLine),
     };
@@ -2984,6 +2998,14 @@ HRESULT MainWindow::PopFilter(
     RebuildFontCollectionList();
     UpdateFontCollectionListUI(selectedFontIndex);
 
+    return S_OK;
+}
+
+
+HRESULT MainWindow::InitializeDisplayTextEdit()
+{
+    HWND hwndText = GetDlgItem(hwnd_, IdcText);
+    Edit_SetCueBannerText(hwndText, L"(icon display text)");
     return S_OK;
 }
 

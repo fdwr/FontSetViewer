@@ -16,7 +16,7 @@
 #define IdbFontCollectionFilter             4
 
 #define IdcLog                              1000
-#define IdcTags                             1001
+#define IdcText                             1001
 #define IdcFontCollectionList               1002
 #define IdcFontCollectionFilter             1003
 #define IdcActivateFont                     1004
