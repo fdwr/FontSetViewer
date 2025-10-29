@@ -74,8 +74,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</OutDir>
-    <IntDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</IntDir>
+    <OutDir>$(SolutionDir)\build\$(Configuration)_$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)\build\$(Configuration)_$(PlatformTarget)\</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -84,8 +84,8 @@
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</OutDir>
-    <IntDir>$(SolutionDir)\.$(Configuration)_$(PlatformTarget)\</IntDir>
+    <OutDir>$(SolutionDir)\build\$(Configuration)_$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)\build\$(Configuration)_$(PlatformTarget)\</IntDir>
     <GenerateManifest>false</GenerateManifest>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
